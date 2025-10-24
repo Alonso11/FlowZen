@@ -1,0 +1,14 @@
+name: rasp_project
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.10
+  - pip
+  - numpy<2.0  
+  - opencv
+  # Servidor web
+  - flask>=2.0.0
+  - werkzeug>=2.0.0
+  - pip:
+    - tflite-runtime>=2.14.0  # Runtime de TensorFlow Lite para inferencia

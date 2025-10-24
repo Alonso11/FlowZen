@@ -1,0 +1,53 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv
+
+# Modelos TFLite (archivos grandes)
+models/*.tflite
+models/*.zip
+models/labelmap.txt
+
+# Resultados y estadísticas
+results/*.json
+results/*.csv
+
+# Archivos temporales
+*.log
+*.tmp
+/tmp/
+
+# Archivos HLS generados
+stream*.ts
+stream.m3u8
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Videos de prueba (grandes)
+*.mp4
+*.avi
+*.mov
+
+# Excepciones - Mantener estructura
+!models/.gitkeep
+!results/.gitkeep

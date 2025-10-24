@@ -1,0 +1,9 @@
+# Dependencias Python para el Sistema de Monitoreo de Tránsito
+
+opencv-python>=4.5.0
+tensorflow>=2.14.0
+numpy>=1.21.0
+# Servidor web
+Flask>=2.0.0
+Werkzeug>=2.0.0
+
