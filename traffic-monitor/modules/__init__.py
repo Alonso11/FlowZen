@@ -8,6 +8,7 @@ from .postprocess import PostProcessor
 from .tracker import IoUTracker
 from .storage import StatsCollector
 from .streaming import FFmpegStreamer
+from .traffic_light_controller import TrafficLightController, TrafficLightState
 
 __all__ = [
     'VideoCapture',
@@ -16,5 +17,7 @@ __all__ = [
     'PostProcessor',
     'IoUTracker',
     'StatsCollector',
-    'FFmpegStreamer'
+    'FFmpegStreamer',
+    'TrafficLightController',
+    'TrafficLightState'
 ]

@@ -16,9 +16,12 @@ class FFmpegStreamer:
     Gestiona streaming de video usando FFmpeg con HLS.
     """
     def __init__(self, width=640, height=480, fps=15,
-                 output_dir='/tmp', use_gpu=True, bitrate='1500k'):
+                 output_dir='/tmp', use_gpu=True, bitrate='1500k', hls_time=4, stream_name='stream'):
         """
         Inicializa el streamer FFmpeg.
+
+        Args:
+            stream_name: Nombre base para los archivos HLS (ej: 'stream', 'vehicular', 'pedestrian')
         """
         self.width = width
         self.height = height
@@ -26,6 +29,8 @@ class FFmpegStreamer:
         self.output_dir = Path(output_dir)
         self.use_gpu = use_gpu
         self.bitrate = bitrate
+        self.hls_time = hls_time
+        self.stream_name = stream_name
 
         self.process = None
         self.is_running = False
@@ -33,7 +38,7 @@ class FFmpegStreamer:
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
         logger.info(f"FFmpegStreamer inicializado: {width}x{height}@{fps}fps, "
-                   f"gpu={use_gpu}, bitrate={bitrate}")
+                   f"gpu={use_gpu}, bitrate={bitrate}, hls_time={hls_time}s, name={stream_name}")
 
     def start(self):
         """
@@ -46,7 +51,7 @@ class FFmpegStreamer:
         try:
             import glob
             import os
-            old_files = glob.glob(str(self.output_dir / 'stream*'))
+            old_files = glob.glob(str(self.output_dir / f'{self.stream_name}*'))
             for old_file in old_files:
                 try:
                     os.remove(old_file)
@@ -55,43 +60,43 @@ class FFmpegStreamer:
                     logger.warning(f"No se pudo eliminar {old_file}: {e}")
 
             if old_files:
-                logger.info(f"Limpiados {len(old_files)} archivos HLS antiguos")
+                logger.info(f"Limpiados {len(old_files)} archivos HLS antiguos para {self.stream_name}")
 
             if self.use_gpu:
                 codec = 'h264_omx'  # GPU en Raspberry Pi
             else:
                 codec = 'libx264'  # CPU
 
-            output_path = str(self.output_dir / 'stream.m3u8')
+            output_path = str(self.output_dir / f'{self.stream_name}.m3u8')
 
             command = [
                 'ffmpeg',
-                '-y',  
+                '-y',
                 '-f', 'rawvideo',
                 '-vcodec', 'rawvideo',
                 '-pix_fmt', 'bgr24',
                 '-s', f'{self.width}x{self.height}',
                 '-r', str(self.fps),
-                '-i', '-',  
-                
+                '-i', '-',
+
                 # Configuración de video
                 '-c:v', codec,
-                '-profile:v', 'baseline', 
-                '-level', '3.0',          
-                '-pix_fmt', 'yuv420p',  
+                '-profile:v', 'baseline',
+                '-level', '3.0',
+                '-pix_fmt', 'yuv420p',
                 '-b:v', self.bitrate,
                 '-preset', 'ultrafast',
                 '-tune', 'zerolatency',
                 '-g', str(self.fps * 2),   # GOP = 2 segundos
-                
+
                 # Configuración HLS
                 '-f', 'hls',
-                '-hls_time', '2', 
-                '-hls_list_size', '10', 
-                '-hls_flags', 'delete_segments',  
-                '-hls_delete_threshold', '1',  
+                '-hls_time', str(self.hls_time),
+                '-hls_list_size', '10',
+                '-hls_flags', 'delete_segments',
+                '-hls_delete_threshold', '1',
                 '-hls_segment_type', 'mpegts',
-                '-hls_segment_filename', str(self.output_dir / 'stream%03d.ts'),
+                '-hls_segment_filename', str(self.output_dir / f'{self.stream_name}%03d.ts'),
                 output_path
             ]
 

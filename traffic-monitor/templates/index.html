@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Monitoreo de Tránsito</title>
+    <title>Sistema Inteligente de Semáforos </title>
     <style>
         * {
             margin: 0;
@@ -13,102 +13,109 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #7e22ce 100%);
             color: #333;
-            padding: 20px;
+            padding: 15px;
             min-height: 100vh;
         }
 
         .container {
-            max-width: 1400px;
+            max-width: 1800px;
             margin: 0 auto;
         }
 
         header {
             text-align: center;
             color: white;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
         }
 
         header h1 {
             font-size: 2.5em;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            margin-bottom: 5px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
         }
 
-        header p {
+        header .subtitle {
             font-size: 1.1em;
-            opacity: 0.9;
+            opacity: 0.95;
+            font-weight: 300;
         }
 
-        .main-grid {
+        /* Grid principal: Dos videos arriba, estadísticas abajo */
+        .video-grid {
             display: grid;
-            grid-template-columns: 2fr 1fr;
+            grid-template-columns: 1fr 1fr;
             gap: 20px;
             margin-bottom: 20px;
         }
 
-        .card {
+        .video-panel {
             background: white;
             border-radius: 15px;
-            padding: 25px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
         }
 
-        .card h2 {
-            color: #667eea;
-            margin-bottom: 20px;
+        .video-panel h2 {
+            color: #1e3c72;
+            margin-bottom: 15px;
             font-size: 1.5em;
-            border-bottom: 3px solid #667eea;
-            padding-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .video-panel h2::before {
+            content: '📹';
+            font-size: 1.2em;
         }
 
         .video-container {
-            position: relative;
             width: 100%;
             background: #000;
             border-radius: 10px;
             overflow: hidden;
+            position: relative;
+            padding-top: 56.25%; /* 16:9 aspect ratio */
         }
 
-        video {
-            width: 100%;
-            height: auto;
-            display: block;
-        }
-
-        .video-overlay {
+        .video-container video {
             position: absolute;
-            top: 10px;
-            left: 10px;
-            background: rgba(0,0,0,0.7);
-            color: white;
-            padding: 10px 15px;
-            border-radius: 5px;
-            font-size: 0.9em;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
         }
 
-        .stream-loading {
+        .video-loading {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            text-align: center;
             color: white;
-            background: rgba(0,0,0,0.8);
-            padding: 30px;
-            border-radius: 10px;
+            font-size: 1.2em;
+            text-align: center;
             z-index: 10;
+            display: none;
+        }
+
+        .video-loading.active {
+            display: block;
         }
 
         .spinner {
-            border: 4px solid rgba(255,255,255,0.3);
+            border: 4px solid rgba(255, 255, 255, 0.3);
             border-top: 4px solid white;
             border-radius: 50%;
             width: 50px;
             height: 50px;
             animation: spin 1s linear infinite;
-            margin: 0 auto 15px;
+            margin: 0 auto 15px auto;
         }
 
         @keyframes spin {
@@ -116,106 +123,210 @@
             100% { transform: rotate(360deg); }
         }
 
-        .stream-loading.hidden {
-            display: none;
+        .video-status {
+            margin-top: 15px;
+            padding: 12px;
+            background: #f0f4f8;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
+        .count-badge {
+            background: #1e3c72;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        /* Grid de estadísticas y semáforos */
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
             margin-bottom: 20px;
         }
 
-        .stat-item {
+        .stats-panel {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .stats-panel h2 {
+            color: #1e3c72;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Panel de semáforos */
+        .traffic-lights-panel {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .traffic-lights-panel h2 {
+            color: #1e3c72;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            text-align: center;
+        }
+
+        .traffic-lights-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .traffic-light-box {
+            text-align: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            transition: transform 0.3s ease;
+        }
+
+        .traffic-light-box:hover {
+            transform: scale(1.02);
+        }
+
+        .traffic-light-box h3 {
+            margin-bottom: 10px;
+            color: #495057;
+            font-size: 1.2em;
+        }
+
+        .traffic-light-image {
+            width: 100%;
+            max-width: 150px;
+            height: auto;
+            margin: 0 auto;
+            display: block;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .traffic-light-info {
+            margin-top: 15px;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+            font-size: 0.95em;
+        }
+
+        .traffic-light-info p {
+            margin: 5px 0;
+        }
+
+        .time-badge {
+            display: inline-block;
+            background: #7e22ce;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-weight: bold;
+            margin-top: 8px;
+        }
+
+        /* Tablas de estadísticas */
+        .stats-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        .stats-table th {
+            background: #1e3c72;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .stats-table td {
+            padding: 12px;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .stats-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .stat-number {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #7e22ce;
+        }
+
+        /* Performance metrics */
+        .performance-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .metric-card {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             padding: 20px;
-            border-radius: 10px;
+            border-radius: 12px;
             text-align: center;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
 
-        .stat-item .label {
+        .metric-card .label {
             font-size: 0.9em;
             opacity: 0.9;
-            margin-bottom: 5px;
+            margin-bottom: 8px;
         }
 
-        .stat-item .value {
+        .metric-card .value {
             font-size: 2em;
             font-weight: bold;
         }
 
-        .performance-section {
-            margin-top: 20px;
-            padding: 20px;
-            background: #f8f9fa;
-            border-radius: 10px;
-        }
-
-        .performance-section h3 {
-            color: #667eea;
-            margin-bottom: 15px;
-        }
-
-        .performance-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-        }
-
-        .performance-item {
-            padding: 10px;
-            background: white;
-            border-radius: 5px;
-            border-left: 4px solid #667eea;
-        }
-
-        .performance-item .perf-label {
-            font-size: 0.85em;
-            color: #666;
-        }
-
-        .performance-item .perf-value {
-            font-size: 1.3em;
-            font-weight: bold;
-            color: #333;
-        }
-
+        /* Status indicators */
         .status-indicator {
             display: inline-block;
             width: 12px;
             height: 12px;
             border-radius: 50%;
             margin-right: 8px;
-            animation: pulse 2s infinite;
         }
 
         .status-online {
-            background: #4ade80;
+            background: #28a745;
+            box-shadow: 0 0 8px #28a745;
         }
 
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
+        .status-offline {
+            background: #dc3545;
         }
 
-        .footer {
-            text-align: center;
-            color: white;
-            margin-top: 20px;
-            opacity: 0.8;
-            font-size: 0.9em;
-        }
-
-        @media (max-width: 968px) {
-            .main-grid {
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .video-grid {
                 grid-template-columns: 1fr;
             }
 
             .stats-grid {
                 grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 1.8em;
             }
 
             .performance-grid {
@@ -223,258 +334,473 @@
             }
         }
 
-        .loading {
-            text-align: center;
-            padding: 20px;
-            color: #666;
+        /* Animaciones */
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
         }
 
-        .error-message {
-            background: #fee;
-            color: #c33;
+        .updating {
+            animation: pulse 1s infinite;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            color: white;
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            font-size: 0.9em;
+        }
+
+        .alert-box {
             padding: 15px;
-            border-radius: 5px;
-            border-left: 4px solid #c33;
-            margin-bottom: 15px;
+            margin: 15px 0;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .alert-warning {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            color: #856404;
+        }
+
+        .alert-info {
+            background: #d1ecf1;
+            border-left: 4px solid #17a2b8;
+            color: #0c5460;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>Sistema de Monitoreo de Tránsito</h1>
-            <p>
-                <span class="status-indicator status-online"></span>
-                Cruces Inteligentes con Edge AI
-            </p>
+            <h1>🚦 Sistema Inteligente de Gestión de Semáforos</h1>
+            <p class="subtitle"> Sistema de Semáforos Inteligentes con Edge AI</p>
         </header>
 
-        <div class="main-grid">
-            <!-- Video Stream -->
-            <div class="card">
-                <h2>Stream de Video</h2>
+        <!-- Videos de entrada con semáforos integrados -->
+        <div class="video-grid">
+            <!-- Video Vehicular + Semáforo -->
+            <div class="video-panel">
+                <h2>🚗 Tráfico Vehicular</h2>
                 <div class="video-container">
-                    <video id="videoPlayer" autoplay muted playsinline controls>
-                        <source src="/stream.m3u8" type="application/x-mpegURL">
-                        Tu navegador no soporta HLS.
-                    </video>
-
-                    <!-- Indicador de carga del stream -->
-                    <div id="streamLoading" class="stream-loading">
+                    <div id="loading-vehicular" class="video-loading active">
                         <div class="spinner"></div>
-                        <div>Esperando stream...</div>
-                        <div style="font-size: 0.8em; margin-top: 10px; opacity: 0.8;">
-                            El video comenzará en unos segundos
-                        </div>
+                        <p>Iniciando transmisión...</p>
+                        <p style="font-size: 0.85em; opacity: 0.7; margin-top: 8px;">
+                            Detección continua con IA<br>
+                            <span style="color: #4CAF50;">✓ Sistema activo</span>
+                        </p>
                     </div>
+                    <video id="video-vehicular" autoplay muted playsinline>
+                        Su navegador no soporta el elemento de video.
+                    </video>
+                </div>
+                <div class="video-status">
+                    <span><span class="status-indicator status-online"></span>En línea</span>
+                    <span class="count-badge" id="vehicle-count">0 vehículos</span>
+                </div>
 
-                    <div class="video-overlay">
-                        <span id="liveStatus">EN VIVO</span>
+                <!-- Semáforo Vehicular integrado -->
+                <div class="traffic-light-box" style="margin-top: 20px;">
+                    <h3>🚦 Control Semáforo</h3>
+                    <img id="vehicular-light-img" class="traffic-light-image"
+                         src="/api/traffic-lights/images/vehicular_verde" alt="Semáforo Vehicular">
+                    <div class="traffic-light-info">
+                        <p><strong>Estado:</strong> <span id="vehicular-state">Verde</span></p>
+                        <p><strong>Vehículos:</strong> <span id="vehicular-vehicle-count">0</span></p>
+                        <div class="time-badge" id="vehicular-time">0s</div>
                     </div>
                 </div>
             </div>
 
-            <!-- Statistics Panel -->
-            <div class="card">
-                <h2>Detecciones</h2>
-                <div class="stats-grid">
-                    <div class="stat-item">
-                        <div class="label">Autos</div>
-                        <div class="value" id="stat-car">0</div>
+            <!-- Video Peatonal + Semáforo -->
+            <div class="video-panel">
+                <h2>🚶 Tráfico Peatonal</h2>
+                <div class="video-container">
+                    <div id="loading-pedestrian" class="video-loading active">
+                        <div class="spinner"></div>
+                        <p>Iniciando transmisión...</p>
+                        <p style="font-size: 0.85em; opacity: 0.7; margin-top: 8px;">
+                            Detección continua con IA<br>
+                            <span style="color: #4CAF50;">✓ Sistema activo</span>
+                        </p>
                     </div>
-                    <div class="stat-item">
-                        <div class="label">Personas</div>
-                        <div class="value" id="stat-person">0</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="label">Motos</div>
-                        <div class="value" id="stat-motorcycle">0</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="label">Bicicletas</div>
-                        <div class="value" id="stat-bicycle">0</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="label">Buses</div>
-                        <div class="value" id="stat-bus">0</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="label">Camiones</div>
-                        <div class="value" id="stat-truck">0</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="label">Perros</div>
-                        <div class="value" id="stat-dog">0</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="label">Gatos</div>
-                        <div class="value" id="stat-cat">0</div>
-                    </div>
+                    <video id="video-pedestrian" autoplay muted playsinline>
+                        Su navegador no soporta el elemento de video.
+                    </video>
+                </div>
+                <div class="video-status">
+                    <span><span class="status-indicator status-online"></span>En línea</span>
+                    <span class="count-badge" id="pedestrian-count">0 peatones</span>
                 </div>
 
-                <div class="performance-section">
-                    <h3>Rendimiento del Sistema</h3>
-                    <div class="performance-grid">
-                        <div class="performance-item">
-                            <div class="perf-label">FPS Actual</div>
-                            <div class="perf-value" id="perf-fps">0.0</div>
-                        </div>
-                        <div class="performance-item">
-                            <div class="perf-label">Tiempo Transcurrido</div>
-                            <div class="perf-value" id="perf-time">00:00:00</div>
-                        </div>
-                        <div class="performance-item">
-                            <div class="perf-label">Frames Procesados</div>
-                            <div class="perf-value" id="perf-frames">0</div>
-                        </div>
-                        <div class="performance-item">
-                            <div class="perf-label">FPS Promedio</div>
-                            <div class="perf-value" id="perf-avg-fps">0.0</div>
-                        </div>
+                <!-- Semáforo Peatonal integrado -->
+                <div class="traffic-light-box" style="margin-top: 20px;">
+                    <h3>🚦 Control Semáforo</h3>
+                    <img id="pedestrian-light-img" class="traffic-light-image"
+                         src="/api/traffic-lights/images/peatonal_rojo" alt="Semáforo Peatonal">
+                    <div class="traffic-light-info">
+                        <p><strong>Estado:</strong> <span id="pedestrian-state">Rojo</span></p>
+                        <p><strong>Peatones:</strong> <span id="pedestrian-pedestrian-count">0</span></p>
+                        <div class="time-badge" id="pedestrian-time">0s</div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="footer">
-            <p>Sistema de Monitoreo Inteligente | Raspberry Pi 4 + TensorFlow Lite</p>
-            <p>Proyecto de Sistemas Embebidos - TEC</p>
+        <!-- Estadísticas -->
+        <div class="stats-grid" style="grid-template-columns: 1fr;">
+            <!-- Panel de Estadísticas -->
+            <div class="stats-panel">
+                <h2>📊 Estadísticas de Detección</h2>
+
+                <div class="alert-box alert-info" id="traffic-light-alert"></div>
+
+                <table class="stats-table">
+                    <thead>
+                        <tr>
+                            <th>Clase</th>
+                            <th>Detecciones Totales</th>
+                            <th>Objetos Únicos</th>
+                        </tr>
+                    </thead>
+                    <tbody id="stats-table-body">
+                    </tbody>
+                </table>
+
+                <div class="performance-grid">
+                    <div class="metric-card">
+                        <div class="label">FPS Actual</div>
+                        <div class="value" id="fps-value">0</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="label">Tiempo Ejecución</div>
+                        <div class="value" id="elapsed-time">00:00:00</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="label">Frames Procesados</div>
+                        <div class="value" id="frames-processed">0</div>
+                    </div>
+                </div>
+            </div>
         </div>
+
+        <footer>
+            <p><strong>Traffic Monitor</strong> | Tecnológico de Costa Rica | Taller de Sistemas Embebidos</p>
+            <p>Desarrollado por: Lizzy González, Andrés Bonilla, Fabián Gómez</p>
+        </footer>
     </div>
 
+    <!-- HLS.js para streaming de video -->
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+
     <script>
-        // Inicializar HLS.js para reproducir el stream
-        const video = document.getElementById('videoPlayer');
-        const videoSrc = '/stream.m3u8';
-        const streamLoading = document.getElementById('streamLoading');
+        // Configuración
+        const STATS_UPDATE_INTERVAL = 1000; // ms
+        const VIDEO_SOURCE_VEHICULAR = '/vehicular.m3u8';
+        const VIDEO_SOURCE_PEDESTRIAN = '/pedestrian.m3u8';
 
-        let hls = null;
-        let retryCount = 0;
-        const maxRetries = 20;
-        const retryDelay = 1000; // 1 segundo
+        // Referencias DOM
+        const videoVehicular = document.getElementById('video-vehicular');
+        const videoPedestrian = document.getElementById('video-pedestrian');
+        const loadingVehicular = document.getElementById('loading-vehicular');
+        const loadingPedestrian = document.getElementById('loading-pedestrian');
+        const vehicleCountBadge = document.getElementById('vehicle-count');
+        const pedestrianCountBadge = document.getElementById('pedestrian-count');
+        const statsTableBody = document.getElementById('stats-table-body');
+        const fpsValue = document.getElementById('fps-value');
+        const elapsedTime = document.getElementById('elapsed-time');
+        const framesProcessed = document.getElementById('frames-processed');
+        const trafficLightAlert = document.getElementById('traffic-light-alert');
 
-        // Ocultar indicador cuando el video comience a reproducirse
-        video.addEventListener('playing', function() {
-            streamLoading.classList.add('hidden');
-            retryCount = 0; // Reset retry counter on success
-        });
+        // Referencias semáforos
+        const vehicularLightImg = document.getElementById('vehicular-light-img');
+        const pedestrianLightImg = document.getElementById('pedestrian-light-img');
+        const vehicularState = document.getElementById('vehicular-state');
+        const pedestrianState = document.getElementById('pedestrian-state');
+        const vehicularVehicleCount = document.getElementById('vehicular-vehicle-count');
+        const pedestrianPedestrianCount = document.getElementById('pedestrian-pedestrian-count');
+        const vehicularTime = document.getElementById('vehicular-time');
+        const pedestrianTime = document.getElementById('pedestrian-time');
 
-        // Mostrar indicador si el video se detiene o está esperando datos
-        video.addEventListener('waiting', function() {
-            streamLoading.classList.remove('hidden');
-        });
-
-        function initHLS() {
+        // Inicializar streaming de video (dos streams independientes)
+        function initVideoStreaming() {
+            // Video vehicular
             if (Hls.isSupported()) {
-                if (hls) {
-                    hls.destroy();
-                }
-
-                hls = new Hls({
+                const hlsVehicular = new Hls({
                     enableWorker: true,
-                    lowLatencyMode: true,
+                    lowLatencyMode: false,
                     backBufferLength: 90,
-                    manifestLoadingTimeOut: 10000,
-                    manifestLoadingMaxRetry: 4,
-                    manifestLoadingRetryDelay: 1000,
-                    levelLoadingTimeOut: 10000,
-                    levelLoadingMaxRetry: 4,
-                    fragLoadingTimeOut: 20000,
-                    fragLoadingMaxRetry: 6
+                    maxBufferLength: 60,   
+                    maxMaxBufferLength: 120,
+                    maxBufferSize: 120 * 1000 * 1000, 
+                    maxBufferHole: 1.5,  
+                    liveSyncDurationCount: 5, 
+                    liveMaxLatencyDurationCount: 15,
+                    manifestLoadingTimeOut: 15000,
+                    manifestLoadingMaxRetry: 10,
+                    levelLoadingTimeOut: 15000,
+                    levelLoadingMaxRetry: 10,
+                    startPosition: -1,
+                    maxLoadingDelay: 4,
+                    maxBufferHole: 1.5,
+                    highBufferWatchdogPeriod: 1,
+                    nudgeMaxRetry: 5
+                });
+                hlsVehicular.loadSource(VIDEO_SOURCE_VEHICULAR);
+                hlsVehicular.attachMedia(videoVehicular);
+                hlsVehicular.on(Hls.Events.MANIFEST_PARSED, function() {
+                    console.log('Video vehicular: Stream iniciado');
+                    videoVehicular.play().catch(e => console.log('Autoplay bloqueado:', e));
                 });
 
-                hls.loadSource(videoSrc);
-                hls.attachMedia(video);
-
-                hls.on(Hls.Events.MANIFEST_PARSED, function() {
-                    console.log('Manifest parsed, intentando reproducir...');
-                    video.play().catch(e => {
-                        console.log('Autoplay bloqueado:', e);
-                    });
+                // Ocultar indicador de carga cuando el video empiece a reproducirse
+                videoVehicular.addEventListener('playing', function() {
+                    console.log('Video vehicular: Reproduciendo');
+                    loadingVehicular.classList.remove('active');
                 });
 
-                hls.on(Hls.Events.ERROR, function(event, data) {
-                    console.error('Error HLS:', data);
-
+                videoVehicular.addEventListener('waiting', function() {
+                    console.log('Video vehicular: Buffering...');
+                    loadingVehicular.classList.add('active');
+                });
+                hlsVehicular.on(Hls.Events.ERROR, function(event, data) {
                     if (data.fatal) {
+                        console.error('Error fatal en video vehicular:', data);
                         switch(data.type) {
                             case Hls.ErrorTypes.NETWORK_ERROR:
-                                console.log('Error de red, reintentando...');
-                                if (retryCount < maxRetries) {
-                                    retryCount++;
-                                    setTimeout(function() {
-                                        console.log(`Reintento ${retryCount}/${maxRetries}`);
-                                        hls.startLoad();
-                                    }, retryDelay);
-                                } else {
-                                    console.error('Máximo de reintentos alcanzado');
-                                    streamLoading.querySelector('div:nth-child(2)').textContent =
-                                        'Error: No se puede conectar al stream';
-                                }
+                                console.log('Error de red, intentando recuperar...');
+                                hlsVehicular.startLoad();
                                 break;
                             case Hls.ErrorTypes.MEDIA_ERROR:
-                                console.log('Error de medios, intentando recuperar...');
-                                hls.recoverMediaError();
+                                console.log('Error de media, intentando recuperar...');
+                                hlsVehicular.recoverMediaError();
                                 break;
                             default:
-                                console.error('Error fatal irrecuperable');
-                                streamLoading.querySelector('div:nth-child(2)').textContent =
-                                    'Error fatal en el stream';
+                                console.log('Error irrecuperable');
+                                hlsVehicular.destroy();
                                 break;
                         }
                     }
                 });
 
-                hls.on(Hls.Events.FRAG_LOADED, function() {
-                    console.log('Fragmento cargado');
+                // Video peatonal (stream independiente)
+                const hlsPedestrian = new Hls({
+                    enableWorker: true,
+                    lowLatencyMode: false,
+                    backBufferLength: 90,
+                    maxBufferLength: 60,
+                    maxMaxBufferLength: 120,
+                    maxBufferSize: 120 * 1000 * 1000,
+                    maxBufferHole: 1.5,
+                    liveSyncDurationCount: 5,
+                    liveMaxLatencyDurationCount: 15,
+                    manifestLoadingTimeOut: 15000,
+                    manifestLoadingMaxRetry: 10,
+                    levelLoadingTimeOut: 15000,
+                    levelLoadingMaxRetry: 10,
+                    startPosition: -1,
+                    maxLoadingDelay: 4,
+                    maxBufferHole: 1.5,
+                    highBufferWatchdogPeriod: 1,
+                    nudgeMaxRetry: 5
+                });
+                hlsPedestrian.loadSource(VIDEO_SOURCE_PEDESTRIAN);
+                hlsPedestrian.attachMedia(videoPedestrian);
+                hlsPedestrian.on(Hls.Events.MANIFEST_PARSED, function() {
+                    console.log('Video peatonal: Stream iniciado');
+                    videoPedestrian.play().catch(e => console.log('Autoplay bloqueado:', e));
                 });
 
-            } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-                video.src = videoSrc;
-                video.addEventListener('loadedmetadata', function() {
-                    video.play().catch(e => console.log('Autoplay bloqueado:', e));
+                // Ocultar indicador de carga cuando el video empiece a reproducirse
+                videoPedestrian.addEventListener('playing', function() {
+                    console.log('Video peatonal: Reproduciendo');
+                    loadingPedestrian.classList.remove('active');
                 });
+
+                videoPedestrian.addEventListener('waiting', function() {
+                    console.log('Video peatonal: Buffering...');
+                    loadingPedestrian.classList.add('active');
+                });
+                hlsPedestrian.on(Hls.Events.ERROR, function(event, data) {
+                    if (data.fatal) {
+                        console.error('Error fatal en video peatonal:', data);
+                        switch(data.type) {
+                            case Hls.ErrorTypes.NETWORK_ERROR:
+                                hlsPedestrian.startLoad();
+                                break;
+                            case Hls.ErrorTypes.MEDIA_ERROR:
+                                hlsPedestrian.recoverMediaError();
+                                break;
+                            default:
+                                hlsPedestrian.destroy();
+                                break;
+                        }
+                    }
+                });
+            } else if (videoVehicular.canPlayType('application/vnd.apple.mpegurl')) {
+                videoVehicular.src = VIDEO_SOURCE_VEHICULAR;
+                videoPedestrian.src = VIDEO_SOURCE_PEDESTRIAN;
+            } else {
+                console.error('HLS no soportado en este navegador');
             }
         }
 
-        // Esperar un poco antes de inicializar para dar tiempo a que FFmpeg genere segmentos
-        setTimeout(function() {
-            console.log('Inicializando HLS player...');
-            initHLS();
-        }, 2000);
+        // Mapeo de estados a nombres legibles
+        const stateNames = {
+            'vehicular_verde': 'Verde',
+            'vehicular_amarillo': 'Amarillo',
+            'vehicular_rojo': 'Rojo',
+            'peatonal_verde': 'Verde',
+            'peatonal_rojo': 'Rojo'
+        };
 
-        // Actualizar estadísticas cada 1 segundo
-        function updateStats() {
-            fetch('/api/stats')
-                .then(response => response.json())
-                .then(data => {
-                    // Actualizar detecciones
-                    const detections = data.detections || {};
-                    document.getElementById('stat-car').textContent = detections.car || 0;
-                    document.getElementById('stat-person').textContent = detections.person || 0;
-                    document.getElementById('stat-motorcycle').textContent = detections.motorcycle || 0;
-                    document.getElementById('stat-bicycle').textContent = detections.bicycle || 0;
-                    document.getElementById('stat-bus').textContent = detections.bus || 0;
-                    document.getElementById('stat-truck').textContent = detections.truck || 0;
-                    document.getElementById('stat-dog').textContent = detections.dog || 0;
-                    document.getElementById('stat-cat').textContent = detections.cat || 0;
+        // Actualizar estadísticas
+        async function updateStats() {
+            try {
+                const response = await fetch('/api/stats');
+                const data = await response.json();
 
-                    // Actualizar rendimiento
-                    const perf = data.performance || {};
-                    document.getElementById('perf-fps').textContent = perf.fps || '0.0';
-                    document.getElementById('perf-avg-fps').textContent = perf.avg_fps || '0.0';
-                    document.getElementById('perf-time').textContent = perf.elapsed_time || '00:00:00';
-                    document.getElementById('perf-frames').textContent = perf.frames_processed || 0;
-                })
-                .catch(error => {
-                    console.error('Error al actualizar estadísticas:', error);
-                });
+                // Actualizar conteos principales
+                const vehicleClasses = ['car', 'motorcycle', 'bus', 'truck', 'bicycle'];
+                const vehicleCount = vehicleClasses.reduce((sum, cls) =>
+                    sum + (data.unique_objects[cls] || 0), 0);
+                const pedestrianCount = data.unique_objects['person'] || 0;
+
+                vehicleCountBadge.textContent = `${vehicleCount} vehículo${vehicleCount !== 1 ? 's' : ''}`;
+                pedestrianCountBadge.textContent = `${pedestrianCount} peatón${pedestrianCount !== 1 ? 'es' : ''}`;
+
+                // Actualizar tabla de estadísticas
+                updateStatsTable(data.detections, data.unique_objects);
+
+                // Actualizar métricas de rendimiento
+                fpsValue.textContent = data.performance.fps.toFixed(1);
+                elapsedTime.textContent = data.performance.elapsed_time;
+                framesProcessed.textContent = data.performance.frames_processed.toLocaleString();
+
+                // Actualizar semáforos si están disponibles
+                if (data.traffic_lights) {
+                    updateTrafficLights(data.traffic_lights);
+                }
+
+            } catch (error) {
+                console.error('Error actualizando estadísticas:', error);
+            }
         }
 
-        // Iniciar actualización periódica
-        setInterval(updateStats, 1000);
-        updateStats(); // Primera actualización inmediata
+        // Actualizar tabla de estadísticas
+        function updateStatsTable(detections, uniqueObjects) {
+            const classes = ['car', 'person', 'motorcycle', 'bicycle', 'bus', 'truck', 'cat', 'dog'];
+            const classIcons = {
+                'car': '🚗',
+                'person': '🚶',
+                'motorcycle': '🏍️',
+                'bicycle': '🚴',
+                'bus': '🚌',
+                'truck': '🚚',
+                'cat': '🐱',
+                'dog': '🐕'
+            };
+
+            statsTableBody.innerHTML = classes
+                .filter(cls => (detections[cls] || 0) > 0)
+                .map(cls => `
+                    <tr>
+                        <td>${classIcons[cls] || ''} ${cls.charAt(0).toUpperCase() + cls.slice(1)}</td>
+                        <td><span class="stat-number">${(detections[cls] || 0).toLocaleString()}</span></td>
+                        <td><span class="stat-number">${(uniqueObjects[cls] || 0).toLocaleString()}</span></td>
+                    </tr>
+                `).join('');
+
+            if (statsTableBody.innerHTML === '') {
+                statsTableBody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: #6c757d;">Sin detecciones aún...</td></tr>';
+            }
+        }
+
+        // Actualizar estado de semáforos
+        function updateTrafficLights(trafficLights) {
+            // Actualizar semáforo vehicular
+            const vState = trafficLights.vehicular_state;
+            const pState = trafficLights.pedestrian_state;
+
+            vehicularLightImg.src = `/api/traffic-lights/images/${vState}`;
+            pedestrianLightImg.src = `/api/traffic-lights/images/${pState}`;
+
+            vehicularState.textContent = stateNames[vState] || vState;
+            pedestrianState.textContent = stateNames[pState] || pState;
+
+            vehicularVehicleCount.textContent = trafficLights.vehicle_count || 0;
+            pedestrianPedestrianCount.textContent = trafficLights.pedestrian_count || 0;
+
+            const timeInState = Math.floor(trafficLights.time_in_state || 0);
+            vehicularTime.textContent = `${timeInState}s`;
+            pedestrianTime.textContent = `${timeInState}s`;
+
+            // Mostrar alerta si está en transición
+            if (trafficLights.in_transition) {
+                trafficLightAlert.textContent = '⚠️ Semáforo en transición (amarillo)';
+                trafficLightAlert.style.display = 'block';
+                trafficLightAlert.className = 'alert-box alert-warning';
+            } else {
+                trafficLightAlert.style.display = 'none';
+            }
+        }
+
+        // Verificar si los streams HLS están disponibles
+        async function checkStreamAvailability() {
+            const maxAttempts = 15; // Máximo 15 intentos (15 segundos)
+            let attempts = 0;
+
+            while (attempts < maxAttempts) {
+                try {
+                    const [respVehicular, respPedestrian] = await Promise.all([
+                        fetch(VIDEO_SOURCE_VEHICULAR, { method: 'HEAD' }),
+                        fetch(VIDEO_SOURCE_PEDESTRIAN, { method: 'HEAD' })
+                    ]);
+
+                    if (respVehicular.ok && respPedestrian.ok) {
+                        console.log('Streams HLS disponibles, iniciando reproducción...');
+                        return true;
+                    }
+                } catch (e) {
+                    // Ignorar errores
+                }
+
+                attempts++;
+                console.log(`Esperando streams HLS... (intento ${attempts}/${maxAttempts})`);
+                await new Promise(resolve => setTimeout(resolve, 1000)); // Esperar 1 segundo
+            }
+
+            console.warn('Timeout esperando streams HLS');
+            return false;
+        }
+
+        // Inicializar aplicación
+        async function init() {
+            console.log('Iniciando Sistema de Gestión de Semáforos...');
+
+            // Esperar a que los streams estén disponibles
+            await checkStreamAvailability();
+
+            // Iniciar videos
+            initVideoStreaming();
+
+            // Iniciar actualización de estadísticas
+            updateStats();
+            setInterval(updateStats, STATS_UPDATE_INTERVAL);
+        }
+
+        // Ejecutar al cargar la página
+        window.addEventListener('load', init);
     </script>
 </body>
 </html>

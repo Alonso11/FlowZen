@@ -120,11 +120,13 @@ class IoUTracker:
 
     def _get_confirmed_tracks(self):
         """
-        Retorna solo los tracks confirmados (con suficientes hits).
+        Retorna solo los tracks confirmados con suficientes detecciones.
         """
         confirmed = []
         for track in self.tracks.values():
-            if track.hits >= self.min_hits or track.time_since_update == 0:
+            # Solo considerar confirmados si:
+            # 1. Tienen suficientes hits Y están activos (detectados recientemente)
+            if track.hits >= self.min_hits and track.time_since_update <= 5:
                 confirmed.append({
                     'track_id': track.track_id,
                     'class': track.class_name,
@@ -138,9 +140,23 @@ class IoUTracker:
     def _calculate_iou(bbox1, bbox2):
         """
         Calcula Intersection over Union (IoU) entre dos bounding boxes.
+        Usa distancia de centroides como métrica adicional para objetos en movimiento.
         """
         x1_1, y1_1, x2_1, y2_1 = bbox1
         x1_2, y1_2, x2_2, y2_2 = bbox2
+
+        # Calcular dimensiones de ambos boxes
+        w1 = x2_1 - x1_1
+        h1 = y2_1 - y1_1
+        w2 = x2_2 - x1_2
+        h2 = y2_2 - y1_2
+
+        # Calcular centroides
+        cx1 = (x1_1 + x2_1) / 2
+        cy1 = (y1_1 + y2_1) / 2
+        cx2 = (x1_2 + x2_2) / 2
+        cy2 = (y1_2 + y2_2) / 2
+
         # Calcular área de intersección
         x1_i = max(x1_1, x1_2)
         y1_i = max(y1_1, y1_2)
@@ -148,18 +164,38 @@ class IoUTracker:
         y2_i = min(y2_1, y2_2)
 
         if x2_i < x1_i or y2_i < y1_i:
+            # No hay intersección, usar distancia de centroides
+            diagonal_avg = (np.sqrt(w1**2 + h1**2) + np.sqrt(w2**2 + h2**2)) / 2
+            distance = np.sqrt((cx1 - cx2)**2 + (cy1 - cy2)**2)
+
+            # Aceptar hasta 3x la diagonal del objeto
+            if distance < 3 * diagonal_avg:
+                score = max(0.05, 0.3 * (1 - distance / (3 * diagonal_avg)))
+                return score
             return 0.0
 
         intersection = (x2_i - x1_i) * (y2_i - y1_i)
+
         # Calcular área de unión
-        area1 = (x2_1 - x1_1) * (y2_1 - y1_1)
-        area2 = (x2_2 - x1_2) * (y2_2 - y1_2)
+        area1 = w1 * h1
+        area2 = w2 * h2
         union = area1 + area2 - intersection
 
         if union == 0:
             return 0.0
 
-        return intersection / union
+        iou = intersection / union
+
+        # Si el IoU es bajo pero los centroides están cerca, dar bonus
+        w_avg = (w1 + w2) / 2
+        h_avg = (h1 + h2) / 2
+        distance = np.sqrt((cx1 - cx2)**2 + (cy1 - cy2)**2)
+
+        if distance < (w_avg + h_avg) / 2:
+            # Centroides muy cercanos, aumentar score
+            iou = max(iou, 0.15)
+
+        return iou
 
     def get_statistics(self):
         """

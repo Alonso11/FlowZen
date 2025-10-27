@@ -25,13 +25,17 @@ class StatsCollector:
         self.results_dir.mkdir(exist_ok=True)
         self.start_time = None
         self.end_time = None
-        # Contadores 
+        # Contadores
         self.detections_count = defaultdict(int)  # {class_name: count}
         self.unique_tracks = defaultdict(set)  # {class_name: {track_ids}}
         self.frames_processed = 0
         self.total_inference_time = 0.0  # ms
         # Métricas de rendimiento
         self.fps_history = []
+
+        # Estadísticas de semáforos
+        self.traffic_light_state_history = []
+        self.current_traffic_light_state = None
 
         logger.info(f"StatsCollector inicializado: results_dir={results_dir}")
 
@@ -71,6 +75,25 @@ class StatsCollector:
         """
         self.fps_history.append(fps)
 
+    def update_traffic_light_state(self, state_info):
+        """
+        Actualiza el estado actual del sistema de semáforos.
+
+        Args:
+            state_info: dict con información del estado de los semáforos
+        """
+        self.current_traffic_light_state = state_info
+
+        # Registrar cambios de estado significativos en el historial
+        if state_info.get('state_changed', False):
+            self.traffic_light_state_history.append({
+                'timestamp': datetime.now().isoformat(),
+                'vehicular_state': state_info.get('vehicular_state'),
+                'pedestrian_state': state_info.get('pedestrian_state'),
+                'vehicle_count': state_info.get('vehicle_count', 0),
+                'pedestrian_count': state_info.get('pedestrian_count', 0)
+            })
+
     def get_current_stats(self):
         """
         Retorna estadísticas actuales (para API en tiempo real).
@@ -91,7 +114,7 @@ class StatsCollector:
         if self.frames_processed > 0:
             avg_inference = self.total_inference_time / self.frames_processed
 
-        return {
+        stats = {
             'detections': dict(self.detections_count),
             'unique_objects': {
                 class_name: len(track_ids)
@@ -106,6 +129,12 @@ class StatsCollector:
                 'avg_inference_ms': round(avg_inference, 2)
             }
         }
+
+        # Agregar información del sistema de semáforos si está disponible
+        if self.current_traffic_light_state:
+            stats['traffic_lights'] = self.current_traffic_light_state
+
+        return stats
 
     def save_stats(self, filename_prefix='stats'):
         """
@@ -156,6 +185,13 @@ class StatsCollector:
             }
         }
 
+        # Agregar historial de estados de semáforos si existe
+        if self.traffic_light_state_history:
+            stats['traffic_lights'] = {
+                'total_state_changes': len(self.traffic_light_state_history),
+                'state_history': self.traffic_light_state_history
+            }
+
         timestamp = self.start_time.strftime('%Y%m%d_%H%M%S')
         filename = f"{filename_prefix}_{timestamp}.json"
         filepath = self.results_dir / filename
@@ -193,4 +229,6 @@ class StatsCollector:
         self.frames_processed = 0
         self.total_inference_time = 0.0
         self.fps_history.clear()
+        self.traffic_light_state_history.clear()
+        self.current_traffic_light_state = None
         logger.info("Estadísticas reiniciadas")

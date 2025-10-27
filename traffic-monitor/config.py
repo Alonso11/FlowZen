@@ -21,7 +21,7 @@ os.makedirs(MODELS_DIR, exist_ok=True)
 VIDEO_SOURCE = 0  # Por defecto usa cámara
 FRAME_WIDTH = 640
 FRAME_HEIGHT = 480
-TARGET_FPS = 15  # FPS objetivo para captura
+TARGET_FPS = 15  # FPS objetivo para captura y streaming
 
 # =============================================================================
 # F2: PREPROCESAMIENTO
@@ -53,14 +53,14 @@ NUM_THREADS = 4
 # =============================================================================
 # F4: POST-PROCESAMIENTO
 # =============================================================================
-CONFIDENCE_THRESHOLD = 0.5  # Confianza mínima para considerar detección
+CONFIDENCE_THRESHOLD = 0.6  # Confianza mínima para considerar detección
 NMS_THRESHOLD = 0.5  # Threshold para Non-Maximum Suppression (IoU)
 
 # =============================================================================
 # F5: TRACKING
 # =============================================================================
-IOU_THRESHOLD = 0.3  # Threshold IoU para asociar detecciones entre frames
-MAX_AGE = 30  # Frames máximos sin detección antes de eliminar track
+IOU_THRESHOLD = 0.1  # Threshold IoU para asociar detecciones entre frames
+MAX_AGE = 40  # Frames máximos sin detección antes de eliminar track
 MIN_HITS = 3  # Detecciones mínimas para considerar track válido
 
 # =============================================================================
@@ -74,8 +74,8 @@ STATS_FILENAME_PREFIX = 'stats'
 # =============================================================================
 ENABLE_STREAMING = True
 STREAM_DIR = '/tmp'  # Directorio para archivos HLS
-HLS_SEGMENT_DURATION = 2  # Duración de cada segmento HLS en segundos
-HLS_LIST_SIZE = 5  # Número de segmentos en la playlist
+HLS_SEGMENT_DURATION = 2  # Duración de cada segmento HLS en segundos (corto para reducir latencia)
+HLS_LIST_SIZE = 10  # Número de segmentos en la playlist
 
 # Configuración de codec
 USE_GPU_ENCODING = False  # False para PC (libx264), True para Raspberry Pi (h264_omx)
@@ -114,3 +114,41 @@ CLASS_COLORS = {
 LOG_LEVEL = 'INFO'  # DEBUG, INFO, WARNING, ERROR
 PRINT_FPS = True  # Mostrar FPS en consola
 FPS_UPDATE_INTERVAL = 1.0  # Segundos entre actualizaciones de FPS
+
+# =============================================================================
+# F8: CONTROL DE SEMÁFOROS INTELIGENTES
+# =============================================================================
+# Habilitar sistema de control de semáforos
+ENABLE_TRAFFIC_LIGHTS = True
+
+# Fuentes de video para el sistema de semáforos
+# MODO PC: Ambos videos pregrabados (sin cámara)
+VIDEO_SOURCE_VEHICULAR = '../Video1.mp4' # Video pregrabado para tráfico vehicular
+VIDEO_SOURCE_PEDESTRIAN = '../peatones4.mp4'  # Video pregrabado para tráfico peatonal
+
+# MODO RASPBERRY PI: Descomentar cuando esté en la Raspberry Pi
+# VIDEO_SOURCE_VEHICULAR = 0  # Cámara Raspberry Pi para tráfico vehicular
+# VIDEO_SOURCE_PEDESTRIAN = '../Video1.mp4'  # Video pregrabado para tráfico peatonal
+
+# Configuración de tiempos del controlador (segundos)
+MIN_GREEN_TIME = 5  # Tiempo mínimo que debe permanecer un semáforo en verde
+MAX_GREEN_TIME = 20  # Tiempo máximo que puede permanecer un semáforo en verde
+YELLOW_TIME = 2  # Duración del semáforo amarillo
+HIGH_TRAFFIC_THRESHOLD = 5  # Número de objetos para considerar alto tráfico
+CONGESTION_TIME_THRESHOLD = 15  # Tiempo para considerar congestión prolongada (segundos)
+NO_TRAFFIC_WAIT_TIME = 10  # Tiempo de espera sin tráfico antes de cambiar (segundos)
+
+# Rutas de imágenes de semáforos
+TRAFFIC_LIGHT_IMAGES = {
+    'vehicular_verde': os.path.join(PROJECT_ROOT, 'images', 'vehicular_verde.png'),
+    'vehicular_amarillo': os.path.join(PROJECT_ROOT, 'images', 'vehicular_amarillo.png'),
+    'vehicular_rojo': os.path.join(PROJECT_ROOT, 'images', 'vehicular_rojo.png'),
+    'peatonal_verde': os.path.join(PROJECT_ROOT, 'images', 'peatonal_verde.png'),
+    'peatonal_rojo': os.path.join(PROJECT_ROOT, 'images', 'peatonal_rojo.png')
+}
+
+# Clases consideradas como vehículos
+VEHICLE_CLASSES = ['car', 'motorcycle', 'bus', 'truck', 'bicycle']
+
+# Clases consideradas como peatones
+PEDESTRIAN_CLASSES = ['person']
