@@ -74,7 +74,7 @@ STATS_FILENAME_PREFIX = 'stats'
 # =============================================================================
 ENABLE_STREAMING = True
 STREAM_DIR = '/tmp'  # Directorio para archivos HLS
-HLS_SEGMENT_DURATION = 2  # Duración de cada segmento HLS en segundos (corto para reducir latencia)
+HLS_SEGMENT_DURATION = 2  # Duración de cada segmento HLS en segundos 
 HLS_LIST_SIZE = 10  # Número de segmentos en la playlist
 
 # Configuración de codec

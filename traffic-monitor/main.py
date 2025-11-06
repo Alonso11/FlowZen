@@ -379,8 +379,8 @@ class TrafficMonitorSystem:
         Loop principal en modo semáforos (dos fuentes de video).
         """
         self.running = True
-        logger.info("Iniciando loop principal (modo semáforos)...")
-        logger.info("Alternando procesamiento IA entre videos")
+        logger.info("Iniciando loop principal (modo semáforos optimizado)...")
+        logger.info("Alternando procesamiento IA entre videos para mejor rendimiento")
         logger.info("Presione Ctrl+C para detener")
 
         fps_start_time = time.time()
@@ -412,6 +412,7 @@ class TrafficMonitorSystem:
                 process_vehicular = (frame_counter % 2 == 0)
                 process_pedestrian = (frame_counter % 2 == 1)
 
+                # Procesar frame vehicular (con IA o usando cache)
                 if process_vehicular:
                     processed_vehicular, tracked_vehicular, inference_time_v = self.process_frame(
                         frame_vehicular, self.tracker_vehicular
@@ -422,6 +423,7 @@ class TrafficMonitorSystem:
                 else:
                     self.tracker_vehicular.update([])
 
+                    # Usar frame anterior con detecciones previas
                     if last_processed_vehicular is not None:
                         if config.DRAW_BBOXES and last_tracked_vehicular:
                             processed_vehicular = self.postprocessor.draw_detections(
@@ -436,6 +438,7 @@ class TrafficMonitorSystem:
                         processed_vehicular = frame_vehicular.copy()
                         tracked_vehicular = []
 
+                # Procesar frame peatonal (con IA o usando cache)
                 if process_pedestrian:
                     processed_pedestrian, tracked_pedestrian, inference_time_p = self.process_frame(
                         frame_pedestrian, self.tracker_pedestrian
@@ -446,6 +449,7 @@ class TrafficMonitorSystem:
                 else:
                     self.tracker_pedestrian.update([])
 
+                    # Usar frame anterior con detecciones previas
                     if last_processed_pedestrian is not None:
                         if config.DRAW_BBOXES and last_tracked_pedestrian:
                             processed_pedestrian = self.postprocessor.draw_detections(
