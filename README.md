@@ -3,7 +3,7 @@
 
 <div align="center">
 
-<img src="imagenes/Interfaz.png" alt="Sistema de control inteligente de semáforos - Interfaz" width="700"/>
+<img src="traffic-monitor/images/Interfaz.png" alt="Sistema de control inteligente de semáforos - Interfaz" width="700"/>
 
 *Sistema de control de tráfico adaptativo con Computer Vision y Machine Learning*
 
